@@ -1,25 +1,21 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Plan Posiłków</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan Posiłków</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>PLAN POSIŁKÓW</h1>
-<div id="meals-container"></div>
-<button id="generate-list">🛒 Generuj listę zakupów</button>
 
-<script>
-fetch('meals.html')
-  .then(res => res.text())
-  .then(html => {
-    document.getElementById('meals-container').innerHTML = html;
-    addCheckboxes(); // dodajemy checkboxy tylko raz, po wczytaniu przepisów
-  });
-</script>
+  <h1>PLAN POSIŁKÓW</h1>
 
-<script src="script.js"></script>
+  <main id="meals-container"></main>
+
+  <div style="text-align:center; margin: 40px;">
+    <button id="generate-list">🛒 Generuj listę zakupów</button>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
