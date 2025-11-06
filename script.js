@@ -1,8 +1,14 @@
-// ========== DEBUGUJĄCY SCRIPT ==========
+// ========== STABILNA I DEBUGUJĄCA WERSJA ==========
 
 // Dodaje checkbox do każdego posiłku
 function addCheckboxes() {
   const meals = document.querySelectorAll('.meal');
+  if (meals.length === 0) {
+    console.warn('⚠️ addCheckboxes(): brak elementów .meal — spróbuję ponownie za 0.5s');
+    setTimeout(addCheckboxes, 500);
+    return;
+  }
+
   meals.forEach(meal => {
     if (meal.querySelector('.meal-select')) return;
     const checkbox = document.createElement('input');
@@ -14,11 +20,11 @@ function addCheckboxes() {
   console.log(`✅ Dodano checkboxy do ${meals.length} posiłków`);
 }
 
-// Generuje listę zakupów w nowej karcie + loguje wszystko w konsoli
+// Główna funkcja generowania listy
 function generateList() {
   const selectedMeals = document.querySelectorAll('.meal-select:checked');
   console.log(`🟢 Wybrano ${selectedMeals.length} posiłków`);
-  
+
   if (selectedMeals.length === 0) {
     alert('Nie wybrano żadnych posiłków 🥦');
     return;
@@ -27,7 +33,8 @@ function generateList() {
   let ingredients = [];
 
   selectedMeals.forEach((meal, mi) => {
-    console.group(`📦 Posiłek #${mi + 1}: ${meal.querySelector('h3')?.innerText || '<brak tytułu>'}`);
+    const title = meal.querySelector('h3')?.innerText || '(bez tytułu)';
+    console.group(`📦 Posiłek #${mi + 1}: ${title}`);
     const elements = Array.from(meal.querySelectorAll('*'));
     console.log(`🔍 Liczba elementów w tym posiłku: ${elements.length}`);
 
@@ -38,7 +45,7 @@ function generateList() {
 
       if (lower.includes('składniki')) {
         collecting = true;
-        console.log(`🧩 Start sekcji składników — element ${idx}, tag <${el.tagName}>`);
+        console.log(`🧩 Start sekcji składników — <${el.tagName}>`);
       }
 
       if (collecting && text && !lower.includes('składniki') && !lower.includes('przygotowanie') && !lower.includes('makro')) {
@@ -46,22 +53,20 @@ function generateList() {
           .map(l => l.trim())
           .filter(l => l && !l.toLowerCase().includes('makro') && !l.toLowerCase().includes('przygotowanie'));
         if (lines.length > 0) {
-          console.log(`➕ Dodano linie (${lines.length}) z elementu <${el.tagName}>:`, lines);
+          console.log(`➕ Dodano linie z <${el.tagName}>:`, lines);
           ingredients.push(...lines);
         }
       }
 
       if (lower.includes('przygotowanie') || lower.includes('makro')) {
         collecting = false;
-        console.log(`🛑 Koniec sekcji składników — element ${idx}, tag <${el.tagName}>`);
+        console.log(`🛑 Koniec sekcji składników — <${el.tagName}>`);
       }
     });
     console.groupEnd();
   });
 
-  // Usuń duplikaty i puste linie
   const uniqueIngredients = [...new Set(ingredients.map(i => i.trim()).filter(Boolean))];
-
   console.log('🧾 Wszystkie znalezione składniki:', ingredients);
   console.log('✅ Unikalne składniki:', uniqueIngredients);
 
@@ -70,7 +75,6 @@ function generateList() {
     return;
   }
 
-  // Wyświetl listę zakupów w nowej karcie
   const newTab = window.open('', '_blank');
   newTab.document.title = 'Lista zakupów';
   newTab.document.body.innerHTML = `
@@ -90,7 +94,16 @@ function generateList() {
 
 // Po załadowaniu strony
 window.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Skrypt załadowany — oczekuję na dane z meals.html...');
   const btn = document.getElementById('generate-list');
   if (btn) btn.addEventListener('click', generateList);
-  console.log('🚀 Skrypt załadowany — kliknij przycisk "Generuj listę zakupów" i sprawdź konsolę (F12 → Console)');
+
+  // Sprawdź co 0.5 sekundy, czy wczytano posiłki
+  const interval = setInterval(() => {
+    if (document.querySelectorAll('.meal').length > 0) {
+      clearInterval(interval);
+      addCheckboxes();
+      console.log('✅ Wykryto przepisy — checkboxy dodane');
+    }
+  }, 500);
 });
