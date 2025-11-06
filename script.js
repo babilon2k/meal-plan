@@ -18,46 +18,35 @@ function generateList() {
   let ingredients = [];
 
   selectedMeals.forEach(meal => {
-    // znajdź sekcję składników
-    const paragraphs = meal.querySelectorAll('p');
-    paragraphs.forEach(p => {
-      const text = p.innerText;
-      if (text.includes('Składniki')) {
+    const allParagraphs = Array.from(meal.querySelectorAll('p'));
+    let collecting = false;
+    allParagraphs.forEach(p => {
+      const text = p.innerText.trim();
+      if (text.toLowerCase().includes('składniki')) collecting = true;
+      if (text.toLowerCase().includes('przygotowanie') || text.toLowerCase().includes('makro')) collecting = false;
+
+      if (collecting && !text.toLowerCase().includes('składniki')) {
+        // usuń niepotrzebne słowa i puste linie
         const lines = text.split('\n')
           .map(l => l.trim())
-          .filter(line => line && !line.includes('Składniki'));
+          .filter(l => l && !l.toLowerCase().includes('przygotowanie') && !l.toLowerCase().includes('makro'));
         ingredients.push(...lines);
       }
     });
   });
 
   if (ingredients.length === 0) {
-    alert('Nie wybrano żadnych posiłków 🥦');
+    alert('Nie wykryto żadnych składników 😅');
     return;
   }
 
-  // usuń duplikaty
-  const uniqueIngredients = [...new Set(ingredients)];
+  // usuń duplikaty i posortuj
+  const uniqueIngredients = [...new Set(ingredients)].sort((a, b) => a.localeCompare(b));
 
-  // otwórz nową kartę z listą
-  const newTab = window.open('lista.html', '_blank');
-  newTab.onload = () => {
-    newTab.document.body.innerHTML = `
-      <h1>🛍️ Lista zakupów</h1>
-      <ul>${uniqueIngredients.map(i => `<li>${i}</li>`).join('')}</ul>
-    `;
-    Object.assign(newTab.document.body.style, {
-      fontFamily: 'Segoe UI, sans-serif',
-      background: '#1e1e1e',
-      color: '#e4e4e4',
-      padding: '20px',
-      lineHeight: '1.6'
-    });
-  };
-}
-
-// 🔹 Uruchom po załadowaniu strony
-window.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('generate-list');
-  if (btn) btn.addEventListener('click', generateList);
-});
+  // otwórz nową kartę z listą zakupów
+  const newTab = window.open('', '_blank');
+  newTab.document.title = 'Lista zakupów';
+  newTab.document.body.innerHTML = `
+    <h1 style="color:#ff9966; text-align:center;">🛒 Lista zakupów</h1>
+    <ul style="list-style-type:none; padding:0;">
+      ${uniqueIngredients.map(i => `<li style="padding:4px 0; border-bottom:1px solid #444;">${i}</li>
