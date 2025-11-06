@@ -1,6 +1,7 @@
-// --- script.js (stabilna wersja Chrome + Edge) ---
+// --- script.js ---
+// Wersja: wybór całego kafelka zamiast checkboxa
 
-// Załaduj plik meals.html i poczekaj aż się wstawi do DOM
+// Załaduj przepisy
 async function loadMeals() {
   try {
     const res = await fetch('meals.html');
@@ -8,36 +9,38 @@ async function loadMeals() {
     const container = document.getElementById('meals-container');
     container.innerHTML = html;
 
-    // Poczekaj chwilę, aż DOM się odświeży (dla Chrome)
+    // krótka pauza dla Chrome zanim DOM się wyrenderuje
     await new Promise(r => setTimeout(r, 100));
-    addCheckboxes();
-    console.log('✅ meals.html wczytane i checkboxy dodane');
+    setupMealSelection();
+    console.log('✅ meals.html załadowane i aktywowano klikane kafelki');
   } catch (err) {
     console.error('❌ Błąd ładowania meals.html:', err);
   }
 }
 
-// Dodaj checkbox do każdego posiłku
-function addCheckboxes() {
+// Zamienia każdy kafelek .meal w klikalny selektor
+function setupMealSelection() {
   const meals = document.querySelectorAll('.meal');
   meals.forEach(meal => {
-    if (meal.querySelector('.meal-select')) return;
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'meal-select';
-    cb.style.cssText = 'float:right; transform:scale(1.2); margin-top:6px; cursor:pointer;';
-    meal.insertBefore(cb, meal.firstChild);
+    meal.classList.add('selectable');
+    meal.addEventListener('click', () => {
+      meal.classList.toggle('selected');
+    });
   });
+  console.log(`🟢 Aktywowano ${meals.length} klikalnych kafelków`);
 }
 
-// Zbierz składniki z zaznaczonych posiłków
+// Generuj listę zakupów z zaznaczonych kafelków
 function generateList() {
-  const selected = document.querySelectorAll('.meal-select:checked');
-  if (selected.length === 0) return alert('Nie wybrano żadnych posiłków 🥦');
+  const selectedMeals = document.querySelectorAll('.meal.selected');
+  if (selectedMeals.length === 0) {
+    alert('Nie wybrano żadnych posiłków 🥦');
+    return;
+  }
 
   let allIngredients = [];
 
-  selected.forEach(meal => {
+  selectedMeals.forEach(meal => {
     const paragraphs = meal.querySelectorAll('p');
     let collecting = false;
 
@@ -57,9 +60,12 @@ function generateList() {
   });
 
   const unique = [...new Set(allIngredients.map(i => i.trim()).filter(Boolean))];
-  if (unique.length === 0) return alert('Nie wykryto żadnych składników 😅');
+  if (unique.length === 0) {
+    alert('Nie wykryto żadnych składników 😅');
+    return;
+  }
 
-  // Nowa karta z listą
+  // Otwórz listę w nowej karcie
   const newTab = window.open('', '_blank');
   newTab.document.title = 'Lista zakupów';
   newTab.document.body.innerHTML = `
@@ -77,7 +83,7 @@ function generateList() {
   });
 }
 
-// Główna inicjalizacja
+// Inicjalizacja
 window.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('generate-list');
   if (btn) btn.addEventListener('click', generateList);
