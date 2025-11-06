@@ -50,6 +50,22 @@ a:hover {
   text-decoration: underline;
   color: #ffd699;
 }
+.meal.selectable {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.meal.selectable:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 12px rgba(255, 153, 102, 0.3);
+}
+
+.meal.selected {
+  border: 2px solid #ff9966;
+  box-shadow: 0 0 18px rgba(255, 153, 102, 0.5);
+  background: #2f2f2f;
+}
+
 .macro {
   font-weight: bold;
   color: #ffd699;
