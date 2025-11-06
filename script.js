@@ -1,4 +1,5 @@
-document.getElementById('generate-list').addEventListener('click', () => {
+// 🔹 Główna funkcja generowania listy zakupów
+function generateList() {
   const selectedMeals = document.querySelectorAll('.meal-select:checked');
   let ingredients = [];
 
@@ -27,4 +28,26 @@ document.getElementById('generate-list').addEventListener('click', () => {
     newTab.document.body.style.padding = '20px';
     newTab.document.body.style.lineHeight = '1.6';
   };
+}
+
+// 🔹 Po załadowaniu meals.html — dodaj checkboxy do każdego posiłku
+function addCheckboxes() {
+  const meals = document.querySelectorAll('.meal');
+  meals.forEach(meal => {
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'meal-select';
+    checkbox.style.cssText = 'float:right; transform:scale(1.3); margin-top:4px; cursor:pointer;';
+    meal.insertBefore(checkbox, meal.firstChild);
+  });
+}
+
+// 🔹 Po załadowaniu strony — aktywuj przycisk i checkboxy
+window.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('generate-list');
+  if (btn) btn.addEventListener('click', generateList);
+
+  // poczekaj aż meals.html się załaduje
+  const observer = new MutationObserver(() => addCheckboxes());
+  observer.observe(document.getElementById('meals-container'), { childList: true });
 });
