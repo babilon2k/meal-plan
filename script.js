@@ -1,91 +1,62 @@
 // --- script.js ---
-// Wersja: wybór całego kafelka zamiast checkboxa
+// Klikalny wybór kafelków + lista zakupów w nowej karcie
 
-// Załaduj przepisy
 async function loadMeals() {
+  const container = document.getElementById('meals-container');
   try {
     const res = await fetch('meals.html');
     const html = await res.text();
-    const container = document.getElementById('meals-container');
     container.innerHTML = html;
 
-    // krótka pauza dla Chrome zanim DOM się wyrenderuje
-    await new Promise(r => setTimeout(r, 100));
-    setupMealSelection();
-    console.log('✅ meals.html załadowane i aktywowano klikane kafelki');
+    // aktywuj klikane kafelki
+    const meals = document.querySelectorAll('.meal');
+    meals.forEach(meal => {
+      meal.addEventListener('click', () => meal.classList.toggle('selected'));
+    });
+    console.log(`✅ Załadowano ${meals.length} posiłków`);
   } catch (err) {
-    console.error('❌ Błąd ładowania meals.html:', err);
+    container.innerHTML = '<p style="color:red;text-align:center;">❌ Nie udało się załadować posiłków.</p>';
+    console.error('Błąd:', err);
   }
 }
 
-// Zamienia każdy kafelek .meal w klikalny selektor
-function setupMealSelection() {
-  const meals = document.querySelectorAll('.meal');
-  meals.forEach(meal => {
-    meal.classList.add('selectable');
-    meal.addEventListener('click', () => {
-      meal.classList.toggle('selected');
-    });
-  });
-  console.log(`🟢 Aktywowano ${meals.length} klikalnych kafelków`);
-}
-
-// Generuj listę zakupów z zaznaczonych kafelków
 function generateList() {
   const selectedMeals = document.querySelectorAll('.meal.selected');
-  if (selectedMeals.length === 0) {
-    alert('Nie wybrano żadnych posiłków 🥦');
+  if (!selectedMeals.length) {
+    alert('Nie wybrano żadnych posiłków 😅');
     return;
   }
 
-  let allIngredients = [];
-
+  let ingredients = [];
   selectedMeals.forEach(meal => {
-    const paragraphs = meal.querySelectorAll('p');
-    let collecting = false;
-
-    paragraphs.forEach(p => {
-      const text = p.innerText.trim().toLowerCase();
-
-      if (text.includes('składniki')) collecting = true;
-      if (collecting && !text.includes('składniki') && !text.includes('przygotowanie') && !text.includes('makro')) {
-        const lines = p.innerText
+    const p = meal.querySelectorAll('p');
+    p.forEach(el => {
+      if (el.innerText.toLowerCase().includes('składniki')) {
+        const lines = el.innerText
           .split('\n')
-          .map(l => l.trim())
-          .filter(l => l && !l.toLowerCase().includes('przygotowanie') && !l.toLowerCase().includes('makro'));
-        allIngredients.push(...lines);
+          .slice(1)
+          .map(x => x.trim())
+          .filter(Boolean);
+        ingredients.push(...lines);
       }
-      if (text.includes('przygotowanie') || text.includes('makro')) collecting = false;
     });
   });
 
-  const unique = [...new Set(allIngredients.map(i => i.trim()).filter(Boolean))];
-  if (unique.length === 0) {
-    alert('Nie wykryto żadnych składników 😅');
-    return;
-  }
+  const unique = [...new Set(ingredients.map(x => x.toLowerCase()))];
 
-  // Otwórz listę w nowej karcie
-  const newTab = window.open('', '_blank');
-  newTab.document.title = 'Lista zakupów';
-  newTab.document.body.innerHTML = `
-    <h1 style="color:#ff9966; text-align:center;">🛒 Lista zakupów</h1>
-    <ul style="list-style:none; padding:0; margin-top:20px;">
-      ${unique.map(i => `<li style="padding:6px 0; border-bottom:1px solid #444;">${i}</li>`).join('')}
+  const listTab = window.open('', '_blank');
+  listTab.document.title = 'Lista zakupów';
+  listTab.document.body.style.cssText =
+    'background:#1e1e1e;color:#e4e4e4;font-family:Segoe UI,sans-serif;padding:20px;';
+  listTab.document.body.innerHTML = `
+    <h1 style="color:#ff9966;">🛒 Lista zakupów</h1>
+    <ul style="list-style:none;padding:0;">
+      ${unique.map(i => `<li style="border-bottom:1px solid #444;padding:6px 0;">${i}</li>`).join('')}
     </ul>
   `;
-  Object.assign(newTab.document.body.style, {
-    fontFamily: 'Segoe UI, sans-serif',
-    background: '#1e1e1e',
-    color: '#e4e4e4',
-    padding: '20px',
-    lineHeight: '1.6'
-  });
 }
 
-// Inicjalizacja
-window.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('generate-list');
-  if (btn) btn.addEventListener('click', generateList);
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('generate-list').addEventListener('click', generateList);
   loadMeals();
 });
