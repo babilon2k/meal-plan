@@ -14,7 +14,11 @@
 <script>
 fetch('meals.html')
   .then(res => res.text())
-  .then(html => document.getElementById('meals-container').innerHTML = html);
+  .then(html => {
+    document.getElementById('meals-container').innerHTML = html;
+    // 🔸 po wczytaniu treści — dodaj checkboxy
+    if (window.addCheckboxes) addCheckboxes();
+  });
 </script>
 
 <script src="script.js"></script>
