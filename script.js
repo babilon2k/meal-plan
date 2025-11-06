@@ -49,4 +49,20 @@ function generateList() {
   newTab.document.body.innerHTML = `
     <h1 style="color:#ff9966; text-align:center;">🛒 Lista zakupów</h1>
     <ul style="list-style-type:none; padding:0;">
-      ${uniqueIngredients.map(i => `<li style="padding:4px 0; border-bottom:1px solid #444;">${i}</li>
+      ${uniqueIngredients.map(i => `<li style="padding:4px 0; border-bottom:1px solid #444;">${i}</li>`).join('')}
+    </ul>
+  `;
+  Object.assign(newTab.document.body.style, {
+    fontFamily: 'Segoe UI, sans-serif',
+    background: '#1e1e1e',
+    color: '#e4e4e4',
+    padding: '20px',
+    lineHeight: '1.6'
+  });
+}
+
+// 🔹 Po załadowaniu strony
+window.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('generate-list');
+  if (btn) btn.addEventListener('click', generateList);
+});
