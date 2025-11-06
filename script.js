@@ -2,7 +2,6 @@
 function addCheckboxes() {
   const meals = document.querySelectorAll('.meal');
   meals.forEach(meal => {
-    // jeśli już ma checkboxa — pomiń
     if (meal.querySelector('.meal-select')) return;
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -18,18 +17,20 @@ function generateList() {
   let ingredients = [];
 
   selectedMeals.forEach(meal => {
-    const allParagraphs = Array.from(meal.querySelectorAll('p'));
+    const elements = Array.from(meal.querySelectorAll('*'));
     let collecting = false;
-    allParagraphs.forEach(p => {
-      const text = p.innerText.trim();
-      if (text.toLowerCase().includes('składniki')) collecting = true;
-      if (text.toLowerCase().includes('przygotowanie') || text.toLowerCase().includes('makro')) collecting = false;
 
-      if (collecting && !text.toLowerCase().includes('składniki')) {
-        // usuń niepotrzebne słowa i puste linie
+    elements.forEach(el => {
+      const text = el.innerText?.trim() || '';
+      const lower = text.toLowerCase();
+
+      if (lower.includes('składniki')) collecting = true;
+      if (lower.includes('przygotowanie') || lower.includes('makro')) collecting = false;
+
+      if (collecting && !lower.includes('składniki') && text.length > 0) {
         const lines = text.split('\n')
           .map(l => l.trim())
-          .filter(l => l && !l.toLowerCase().includes('przygotowanie') && !l.toLowerCase().includes('makro'));
+          .filter(l => l && !l.toLowerCase().includes('makro') && !l.toLowerCase().includes('przygotowanie'));
         ingredients.push(...lines);
       }
     });
@@ -40,10 +41,8 @@ function generateList() {
     return;
   }
 
-  // usuń duplikaty i posortuj
   const uniqueIngredients = [...new Set(ingredients)].sort((a, b) => a.localeCompare(b));
 
-  // otwórz nową kartę z listą zakupów
   const newTab = window.open('', '_blank');
   newTab.document.title = 'Lista zakupów';
   newTab.document.body.innerHTML = `
