@@ -116,3 +116,45 @@ document.getElementById('add-meal-btn').addEventListener('click', () => {
     console.log('Skopiowano HTML nowego przepisu — wklej go do meals.html');
   });
 });
+// --- DODAWANIE PRZEPISU Z WKLEJONEGO TEKSTU ---
+document.getElementById('add-text-btn').addEventListener('click', () => {
+  const raw = prompt('Wklej cały tekst przepisu tutaj:');
+  if (!raw) return alert('Brak tekstu 😅');
+
+  const lower = raw.toLowerCase();
+  let section = 'obiady';
+  if (lower.includes('śniad')) section = 'sniadania';
+  else if (lower.includes('kolac')) section = 'kolacje';
+
+  // Wyciągamy nazwę (pierwszy wiersz z dużymi literami)
+  const nameMatch = raw.match(/^.*[A-ZŻŹĆĄŚĘŁÓŃ ]{3,}.*$/m);
+  const name = nameMatch ? nameMatch[0].trim() : 'Nowy przepis';
+
+  // Link
+  const linkMatch = raw.match(/https?:\/\/\S+/);
+  const link = linkMatch ? linkMatch[0] : '';
+
+  // Składniki (od "Składniki:" aż do "Makro")
+  const ingredientsMatch = raw.match(/Składniki:(.+?)(Makro|$)/is);
+  const ingredients = ingredientsMatch
+    ? ingredientsMatch[1].trim().split('\n').filter(x => x.trim() !== '').join('<br>')
+    : 'brak składników';
+
+  // Makro
+  const macroMatch = raw.match(/Makro[^:]*:?(.+)/i);
+  const macro = macroMatch ? macroMatch[1].trim() : 'brak danych';
+
+  const html = `
+<div class="meal" data-section="${section}">
+  <h3>${name}</h3>
+  ${link ? `<p><a href="${link}" target="_blank">Link do przepisu</a></p>` : ''}
+  <p><strong>Składniki:</strong><br>${ingredients}</p>
+  <p class="macro">Makro: ${macro}</p>
+</div>`;
+
+  document.getElementById('meals-container').insertAdjacentHTML('beforeend', html);
+  navigator.clipboard.writeText(html);
+
+  alert('✅ Przepis dodany! Skopiowano gotowy blok HTML do schowka 💾');
+});
+
