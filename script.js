@@ -90,3 +90,29 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('generate-list').addEventListener('click', generateList);
   loadMeals();
 });
+document.getElementById('add-meal-btn').addEventListener('click', () => {
+  const name = prompt('Nazwa posiłku:');
+  if (!name) return;
+  const section = prompt('Sekcja (sniadania / obiady / kolacje):', 'obiady');
+  const link = prompt('Link do przepisu (np. Facebook / TikTok):', '');
+  const ingredients = prompt('Składniki (każdy w nowej linii):', '').split('\n').filter(Boolean);
+  const macro = prompt('Makro (np. 500 kcal | 40B | 10T | 60W):', '');
+
+  // Utwórz gotowy blok HTML
+  const html = `
+<div class="meal" data-section="${section}">
+  <h3>${name}</h3>
+  ${link ? `<p><a href="${link}" target="_blank">Link do przepisu</a></p>` : ''}
+  <p><strong>Składniki:</strong><br>${ingredients.join('<br>')}</p>
+  <p class="macro">Makro: ${macro}</p>
+</div>`;
+
+  // Dodaj na stronę
+  document.getElementById('meals-container').insertAdjacentHTML('beforeend', html);
+  alert('✅ Dodano nowy przepis — możesz teraz kliknąć go i dodać do listy zakupów.');
+
+  // Możesz też skopiować HTML do schowka
+  navigator.clipboard.writeText(html).then(() => {
+    console.log('Skopiowano HTML nowego przepisu — wklej go do meals.html');
+  });
+});
