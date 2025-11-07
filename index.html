@@ -10,9 +10,22 @@
 
   <h1>PLAN POSIŁKÓW</h1>
 
+  <!-- 🔍 Panel filtrów -->
+  <div class="filter-bar">
+    <input type="text" id="search" placeholder="🔍 Wyszukaj posiłek..." />
+    <select id="section-filter">
+      <option value="all">🍽️ Wszystkie sekcje</option>
+      <option value="sniadania">🥣 Śniadania</option>
+      <option value="obiady">🍗 Obiady</option>
+      <option value="kolacje">🌙 Kolacje</option>
+    </select>
+  </div>
+
+  <!-- 📋 Pojemnik na posiłki -->
   <main id="meals-container"></main>
 
-<button id="generate-list">🛒 Generuj listę zakupów</button>
+  <!-- 🛒 Przyklejony guzik -->
+  <button id="generate-list">🛒 Generuj listę zakupów</button>
 
   <script src="script.js"></script>
 </body>
