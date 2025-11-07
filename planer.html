@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Planer tygodniowy — Plan Posiłków</title>
+<style>
+  :root{
+    --bg:#1e1e1e; --card:#2a2a2a; --accent1:#ff6600; --accent2:#ff9966; --muted:#888;
+    --text:#e4e4e4; --glass: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;font-family:Segoe UI, Roboto, system-ui, Arial; background:var(--bg); color:var(--text);}
+  header{padding:18px 20px; text-align:center; background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:#fff; font-weight:600; font-size:20px; box-shadow:0 2px 10px rgba(0,0,0,0.4);}
+  main{padding:20px; max-width:1100px; margin:0 auto;}
+  .controls{display:flex; gap:12px; align-items:center; justify-content:space-between; margin:16px 0;}
+  .controls .left{display:flex; gap:12px; align-items:center;}
+  .btn{background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; box-shadow:0 6px 18px rgba(255,153,102,0.15);}
+  .btn.ghost{background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--text); padding:8px 12px; box-shadow:none;}
+  .grid{display:grid; grid-template-columns:repeat(8,1fr); gap:12px; align-items:start;}
+  .grid .head{background:transparent; color:var(--muted); padding:8px 6px; text-align:center; font-size:14px;}
+  .day-col{display:flex; flex-direction:column; gap:12px;}
+  .slot{background:var(--card); border-radius:10px; padding:10px; min-height:84px; box-shadow:0 6px 14px rgba(0,0,0,0.5); cursor:pointer; position:relative; transition:transform .12s ease, box-shadow .12s ease;}
+  .slot:hover{transform:translateY(-4px)}
+  .slot .slot-title{font-size:13px; color:var(--muted); margin-bottom:6px;}
+  .slot .meal-inner{font-weight:600; color:var(--text); font-size:14px;}
+  .slot.empty{opacity:0.85; border:1px dashed rgba(255,255,255,0.04);}
+  /* glow for assigned */
+  .slot.assigned{box-shadow:0 0 18px rgba(255,153,102,0.22), inset 0 0 0 2px rgba(255,153,102,0.08);}
+  .slot .remove{position:absolute; top:6px; right:6px; font-size:12px; color:rgba(255,255,255,0.6); background:transparent; border:none; cursor:pointer; display:none;}
+  .slot.assigned .remove{display:block;}
+  .day-name{font-weight:700; text-align:center; color:var(--text);}
+  .day-name small{display:block; color:var(--muted); font-weight:500; margin-top:4px; font-size:12px;}
+  /* modal */
+  .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:500;}
+  .modal{width:92%; max-width:900px; background:var(--card); border-radius:12px; padding:18px; box-shadow:0 12px 30px rgba(0,0,0,0.7); color:var(--text); max-height:86vh; overflow:auto;}
+  .modal-header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;}
+  .modal .search{flex:1; display:flex; gap:8px;}
+  .search input, .search select{background:var(--glass); border:1px solid rgba(255,255,255,0.04); color:var(--text); padding:8px 10px; border-radius:8px; outline:none;}
+  .meal-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px;}
+  .meal-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); padding:10px; border-radius:8px; cursor:pointer; border:1px solid rgba(255,255,255,0.03); transition:transform .12s ease, box-shadow .12s ease;}
+  .meal-card:hover{transform:translateY(-4px); box-shadow:0 10px 20px rgba(0,0,0,0.5);}
+  .meal-card h4{margin:0 0 6px 0; color:var(--accent2); font-size:14px;}
+  .meal-card p{margin:0; font-size:13px; color:var(--text); opacity:0.9;}
+  .meal-card .meta{margin-top:8px; color:var(--muted); font-size:12px;}
+  footer{margin-top:18px; display:flex; gap:12px; justify-content:flex-end; align-items:center;}
+  .small{font-size:13px;color:var(--muted)}
+  /* responsive */
+  @media (max-width:920px){
+    .grid{grid-template-columns:repeat(1,1fr)}
+    .day-col{flex-direction:row; gap:8px; overflow-x:auto; padding-bottom:10px;}
+    .day-col .slot{min-width:220px}
+  }
+</style>
+</head>
+<body>
+<header>PLANER TYGODNIOWY — Przydziel posiłki do dni</header>
+<main>
+  <div class="controls">
+    <div class="left">
+      <div class="small">Kliknij pole, by przypisać posiłek. Kliknij przypisany posiłek, aby go usunąć.</div>
+    </div>
+    <div>
+      <button id="clear-plan" class="btn ghost">Wyczyść plan</button>
+      <button id="export-list" class="btn">🛒 Generuj listę zakupów</button>
+    </div>
+  </div>
+
+  <div class="grid" id="planner-grid">
+    <div class="head"></div>
+    <!-- headers for days -->
+    <div class="head">Pon</div>
+    <div class="head">Wt</div>
+    <div class="head">Śr</div>
+    <div class="head">Czw</div>
+    <div class="head">Pt</div>
+    <div class="head">Sob</div>
+    <div class="head">Nd</div>
+
+    <div class="head small">Śniadanie</div>
+    <!-- day columns will be inserted here by JS -->
+  </div>
+</main>
+
+<!-- Modal for choosing meal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-header">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div id="modal-title" style="font-weight:700;color:var(--accent2)">Wybierz posiłek</div>
+        <div class="small" id="modal-subtitle"></div>
+      </div>
+      <div class="search">
+        <input id="modal-search" placeholder="Szukaj..." />
+        <select id="modal-section-filter">
+          <option value="all">Wszystkie</option>
+          <option value="sniadania">Śniadania</option>
+          <option value="obiady">Obiady</option>
+          <option value="kolacje">Kolacje</option>
+        </select>
+        <button id="modal-close" class="btn ghost">Zamknij</button>
+      </div>
+    </div>
+
+    <div id="meal-list" class="meal-list" aria-live="polite">
+      <!-- meal cards will be injected -->
+    </div>
+
+    <footer>
+      <div class="small">Liczba przepisów: <span id="meal-count">0</span></div>
+    </footer>
+  </div>
+</div>
+
+<script>
+/*
+  planner.html
+  - fetches meals.html, parses meals and creates selection modal
+  - stores plan in localStorage (key: weeklyMealPlan)
+  - generate shopping list by parsing 'Składniki' sections from selected meals
+*/
+
+// Utility: days
+const DAYS = ['Pon','Wt','Śr','Czw','Pt','Sob','Nd'];
+const SLOTS = ['Sniadanie','Obiad','Kolacja'];
+
+// Parsed meals store
+let parsedMeals = []; // array of {index, title, section, elementHtml, parsedElement}
+
+// Plan structure: plan[dayIndex][slotIndex] = mealIndex | null
+let plan = Array.from({length:7}, () => Array.from({length:3}, ()=>null));
+
+const modalBackdrop = document.getElementById('modal-backdrop');
+const mealListEl = document.getElementById('meal-list');
+const mealCountEl = document.getElementById('meal-count');
+const searchInput = document.getElementById('modal-search');
+const sectionFilter = document.getElementById('modal-section-filter');
+
+async function initPlanner(){
+  buildGrid();
+  await loadMealsAndPrepare();
+  loadSavedPlan();
+  bindControls();
+}
+
+function buildGrid(){
+  const grid = document.getElementById('planner-grid');
+  // remove any existing day columns (if reinit)
+  // create 3 rows of slots after header row: we'll render by columns (for accessibility we place slots in flow)
+  // We'll produce slots row-wise: header row already inserted; we now append rows for each slot label + slots
+  // First row already has header labels; now append rows for each slot
+  for(let slotIndex=0; slotIndex< SLOTS.length; slotIndex++){
+    // label cell (on left)
+    const labelCell = document.createElement('div');
+    labelCell.className = 'head small';
+    labelCell.textContent = SLOTS[slotIndex];
+    grid.appendChild(labelCell);
+    // For each day, append a slot (7 days)
+    for(let day=0; day<7; day++){
+      const slot = document.createElement('div');
+      slot.className = 'slot empty';
+      slot.dataset.day = day;
+      slot.dataset.slot = slotIndex;
+      slot.innerHTML = `<div class="slot-title">${SLOTS[slotIndex]}</div><div class="meal-inner">Brak</div><button class="remove" title="Usuń">✕</button>`;
+      slot.addEventListener('click', onSlotClick);
+      slot.querySelector('.remove').addEventListener('click', (ev)=> {
+        ev.stopPropagation();
+        clearSlot(day, slotIndex);
+      });
+      grid.appendChild(slot);
+    }
+  }
+}
+
+// open modal for a specific slot
+let activeTarget = null; // {day, slot}
+function onSlotClick(e){
+  const el = e.currentTarget;
+  const day = parseInt(el.dataset.day);
+  const slot = parseInt(el.dataset.slot);
+  activeTarget = {day, slot};
+  openModalForSlot(day, slot);
+}
+
+function openModalForSlot(day,slot){
+  modalBackdrop.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('modal-subtitle').textContent = `${DAYS[day]} — ${SLOTS[slot]}`;
+  searchInput.value = '';
+  sectionFilter.value = 'all';
+  renderMealList();
+}
+
+// close modal
+function closeModal(){
+  modalBackdrop.style.display = 'none';
+  document.body.style.overflow = '';
+  activeTarget = null;
+}
+
+// fetch meals.html and parse meals into parsedMeals[]
+async function loadMealsAndPrepare(){
+  try{
+    const res = await fetch('meals.html');
+    const raw = await res.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(raw,'text/html');
+    const meals = Array.from(doc.querySelectorAll('.meal'));
+    parsedMeals = meals.map((el, i) => {
+      const title = (el.querySelector('h3')?.innerText || ('Bez nazwy')).trim();
+      const section = el.dataset && el.dataset.category ? el.dataset.category :
+                      // fallback: try to detect from earlier sibling section-title
+                      (el.closest('.section-title') ? el.closest('.section-title').innerText.toLowerCase() : '');
+      return { index: i, title, section: section || '', elementHtml: el.innerHTML, parsedElement: el };
+    });
+    renderMealList();
+    console.log('Parsed meals:', parsedMeals.length);
+  }catch(err){
+    console.error('Błąd pobierania meals.html:', err);
+    mealListEl.innerHTML = '<div style="color:#f88">Nie udało się wczytać listy posiłków. Upewnij się, że meals.html jest dostępny.</div>';
+  }
+}
+
+// Render meal cards in modal according to filters
+function renderMealList(){
+  const q = (searchInput.value || '').toLowerCase();
+  const section = sectionFilter.value;
+  mealListEl.innerHTML = '';
+  const filtered = parsedMeals.filter(m => {
+    const bySection = section === 'all' || (m.section && m.section.toLowerCase().includes(section));
+    const byQuery = !q || m.title.toLowerCase().includes(q);
+    return bySection && byQuery;
+  });
+  filtered.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.tabIndex = 0;
+    card.innerHTML = `<h4>${escapeHtml(m.title)}</h4>
+      <p class="meta">${escapeHtml(m.section || '')}</p>
+      <div style="margin-top:8px;font-size:13px;color:var(--text);opacity:0.9;">${shortDescriptionFromHtml(m.parsedElement || m.elementHtml)}</div>`;
+    card.addEventListener('click', ()=> assignMealToActive(m.index));
+    mealListEl.appendChild(card);
+  });
+  mealCountEl.textContent = filtered.length;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// produce short description by taking first ingredients line or macro
+function shortDescriptionFromHtml(el){
+  let inner = '';
+  if(typeof el === 'string') inner = el;
+  else inner = el.innerHTML || el.innerText || '';
+  // try to pull "Składniki:" block
+  const txt = inner.replace(/<br\s*\/?>/gi,'\n').replace(/<\/?[^>]+(>|$)/g,'').trim();
+  const match = txt.match(/Składniki:([\s\S]{0,200})/i);
+  if(match){
+    let lines = match[1].split('\n').map(s=>s.trim()).filter(Boolean);
+    return (lines.slice(0,2).join(' • ')).slice(0,140);
+  }
+  return txt.slice(0,140);
+}
+
+// Assign meal index to active slot
+function assignMealToActive(mealIndex){
+  if(activeTarget === null) return;
+  const {day, slot} = activeTarget;
+  plan[day][slot] = mealIndex;
+  savePlan();
+  updateGrid();
+  closeModal();
+}
+
+// Update DOM grid from plan
+function updateGrid(){
+  const slots = document.querySelectorAll('.slot');
+  slots.forEach(slotEl => {
+    const day = parseInt(slotEl.dataset.day);
+    const slot = parseInt(slotEl.dataset.slot);
+    const mealIndex = plan[day][slot];
+    const inner = slotEl.querySelector('.meal-inner');
+    if(mealIndex === null || mealIndex === undefined){
+      slotEl.classList.remove('assigned');
+      slotEl.classList.add('empty');
+      inner.textContent = 'Brak';
+    } else {
+      const meal = parsedMeals[mealIndex];
+      slotEl.classList.add('assigned');
+      slotEl.classList.remove('empty');
+      inner.textContent = meal ? meal.title : 'Brak';
+    }
+  });
+}
+
+// Clear a single slot
+function clearSlot(day,slot){
+  plan[day][slot] = null;
+  savePlan();
+  updateGrid();
+}
+
+// Save plan to localStorage
+function savePlan(){
+  try{
+    localStorage.setItem('weeklyMealPlan', JSON.stringify(plan));
+  }catch(e){
+    console.warn('Nie udało się zapisać planu:', e);
+  }
+}
+// Load plan from localStorage
+function loadSavedPlan(){
+  try{
+    const raw = localStorage.getItem('weeklyMealPlan');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length === 7) plan = parsed;
+    }
+  }catch(e){}
+  updateGrid();
+}
+
+// Clear full plan
+function clearPlan(){
+  if(!confirm('Czy na pewno chcesz wyczyścić cały plan tygodnia?')) return;
+  plan = Array.from({length:7}, () => Array.from({length:3}, ()=>null));
+  savePlan(); updateGrid();
+}
+
+// Bind controls
+function bindControls(){
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e)=> { if(e.target === modalBackdrop) closeModal(); });
+  searchInput.addEventListener('input', renderMealList);
+  sectionFilter.addEventListener('change', renderMealList);
+  document.getElementById('clear-plan').addEventListener('click', clearPlan);
+  document.getElementById('export-list').addEventListener('click', generateShoppingListFromPlan);
+}
+
+// Generate shopping list: parse ingredients from selected meals (using parsedMeals and plan)
+function generateShoppingListFromPlan(){
+  // collect meal indices used
+  const used = new Set();
+  for(let d=0; d<7; d++){
+    for(let s=0; s<3; s++){
+      const mi = plan[d][s];
+      if(Number.isInteger(mi)) used.add(mi);
+    }
+  }
+  if(used.size === 0){
+    alert('Plan jest pusty — przypisz posiłki przed wygenerowaniem listy zakupów.');
+    return;
+  }
+
+  // parse ingredients for each used meal using DOMParser on original meals.html parsedElements (we already have parsedElement)
+  let ingredients = [];
+  used.forEach(mi => {
+    const pm = parsedMeals[mi];
+    if(!pm) return;
+    // we have pm.parsedElement (from DOMParser earlier) — if not, parse elementHtml now
+    let el = pm.parsedElement;
+    if(!el){
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<div>${pm.elementHtml}</div>`,'text/html');
+      el = doc.querySelector('div');
+    }
+    const found = extractIngredientsFromElement(el);
+    ingredients.push(...found);
+  });
+
+  // normalize, dedupe, sort
+  const normalized = ingredients.map(s => s.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const unique = Array.from(new Set(normalized.map(s => s.toLowerCase()))).map(s => { // keep original casing approx
+    // find original in normalized
+    const orig = normalized.find(o => o.toLowerCase() === s);
+    return orig || s;
+  }).sort((a,b)=> a.localeCompare(b, 'pl'));
+
+  // open new tab and show list
+  const newTab = window.open('','_blank');
+  newTab.document.title = 'Lista zakupów — Plan tygodnia';
+  newTab.document.body.style.cssText = 'background:#1e1e1e;color:#e4e4e4;font-family:Segoe UI, sans-serif;padding:20px;';
+  newTab.document.body.innerHTML = `<h1 style="color:${getComputedStyle(document.documentElement).getPropertyValue('--accent2') || '#ff9966'}">🛒 Lista zakupów</h1>
+    <p style="color:var(--muted)">${unique.length} pozycji</p>
+    <ul style="list-style:none;padding:0;margin-top:10px;">
+      ${unique.map(i=>`<li style="padding:8px 0;border-bottom:1px solid #333">${escapeHtml(i)}</li>`).join('')}
+    </ul>`;
+}
+
+// Extract ingredients from a parsed meal element (DOM element)
+function extractIngredientsFromElement(mealEl){
+  const ingredients = [];
+  const allEls = Array.from(mealEl.querySelectorAll('*'));
+  let collecting = false;
+  for(const el of allEls){
+    const text = (el.innerText || '').trim();
+    if(!text) continue;
+    const low = text.toLowerCase();
+    if(low.includes('składnik') || low.includes('skladnik')) {
+      collecting = true;
+      // collect lines in this element after the label
+      const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+      lines.forEach(l=>{
+        if(!/składnik/i.test(l)) ingredients.push(l);
+      });
+      continue;
+    }
+    if(collecting){
+      if(low.includes('przygotowan') || low.includes('makro') || low.includes('smacznego')) { collecting = false; continue; }
+      const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+      lines.forEach(l => {
+        if(!/przygotowan|makro|smacznego/i.test(l)) ingredients.push(l);
+      });
+    }
+  }
+  return ingredients;
+}
+
+// small helper: escape html for new tab
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// initialize
+initPlanner();
+</script>
+</body>
+</html>
