@@ -1,5 +1,4 @@
 // --- script.js ---
-// Klikalny wybór kafelków + lista zakupów w nowej karcie
 
 async function loadMeals() {
   const container = document.getElementById('meals-container');
@@ -8,16 +7,47 @@ async function loadMeals() {
     const html = await res.text();
     container.innerHTML = html;
 
-    // aktywuj klikane kafelki
+    // Dodaj klasy sekcji do meal na podstawie poprzedzającego tytułu
+    let currentSection = '';
+    const elements = container.children;
+    for (let el of elements) {
+      if (el.classList.contains('section-title')) {
+        if (el.textContent.toLowerCase().includes('śniad')) currentSection = 'sniadania';
+        else if (el.textContent.toLowerCase().includes('obiad')) currentSection = 'obiady';
+        else if (el.textContent.toLowerCase().includes('kolac')) currentSection = 'kolacje';
+      } else if (el.classList.contains('meal')) {
+        el.dataset.section = currentSection;
+      }
+    }
+
+    // Aktywuj klikalne kafelki
     const meals = document.querySelectorAll('.meal');
     meals.forEach(meal => {
       meal.addEventListener('click', () => meal.classList.toggle('selected'));
     });
+
+    // Filtry
+    document.getElementById('search').addEventListener('input', filterMeals);
+    document.getElementById('section-filter').addEventListener('change', filterMeals);
+
     console.log(`✅ Załadowano ${meals.length} posiłków`);
   } catch (err) {
     container.innerHTML = '<p style="color:red;text-align:center;">❌ Nie udało się załadować posiłków.</p>';
     console.error('Błąd:', err);
   }
+}
+
+function filterMeals() {
+  const query = document.getElementById('search').value.toLowerCase();
+  const section = document.getElementById('section-filter').value;
+  const meals = document.querySelectorAll('.meal');
+
+  meals.forEach(meal => {
+    const name = meal.querySelector('h3').textContent.toLowerCase();
+    const inSection = section === 'all' || meal.dataset.section === section;
+    const matchesQuery = name.includes(query);
+    meal.style.display = inSection && matchesQuery ? '' : 'none';
+  });
 }
 
 function generateList() {
