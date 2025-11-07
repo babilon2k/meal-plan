@@ -158,5 +158,24 @@ h3 {
   transform: scale(1.07);
   box-shadow: 0 0 20px rgba(255, 153, 102, 0.6);
 }
+.top-button {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: linear-gradient(90deg, #33cc99, #66ffcc);
+  color: #1e1e1e;
+  font-weight: bold;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 24px;
+  cursor: pointer;
+  z-index: 200;
+  transition: all 0.2s ease;
+}
+
+.top-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(102, 255, 204, 0.4);
+}
 
 
