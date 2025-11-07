@@ -103,5 +103,60 @@ h3 {
   transform: scale(1.07);
   box-shadow: 0 0 20px rgba(255, 153, 102, 0.6);
 }
+/* 🔍 Pasek wyszukiwania i filtrów */
+.filter-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 20px auto 10px;
+  padding: 10px;
+  max-width: 700px;
+}
+
+.filter-bar input,
+.filter-bar select {
+  background: #2a2a2a;
+  color: #e4e4e4;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.filter-bar input:focus,
+.filter-bar select:focus {
+  border-color: #ff9966;
+  box-shadow: 0 0 8px rgba(255, 153, 102, 0.4);
+}
+
+.filter-bar select {
+  cursor: pointer;
+}
+
+/* 🛒 Przyklejony guzik */
+#generate-list {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  background: linear-gradient(90deg, #ff6600, #ff9966);
+  color: white;
+  border: none;
+  padding: 16px 28px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+#generate-list:hover {
+  transform: scale(1.07);
+  box-shadow: 0 0 20px rgba(255, 153, 102, 0.6);
+}
 
 
